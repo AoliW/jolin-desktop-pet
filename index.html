@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jolin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+      -webkit-app-region: no-drag;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Speech bubble — position is set dynamically by renderer.js */
+    #bubble {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #e8a87c;
+      border-radius: 12px;
+      padding: 4px 8px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11px;
+      color: #555;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    #bubble.show {
+      opacity: 1;
+    }
+
+    #bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: #e8a87c;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="bubble">Meow~</div>
+    <canvas id="cat"></canvas>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
