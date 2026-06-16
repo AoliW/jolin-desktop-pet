@@ -1,11 +1,27 @@
 {
+  "env": {
+    "CLAUDE_CODE_TMPDIR": "/Users/aoli/claude_tmp"
+  },
   "permissions": {
     "allow": [
       "Bash(pkill -f \"electron .\")",
       "Bash(npm start *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(ls /Users/aoli/Desktop/Jolin_ai_vid/frames/cat_walk_frame_pick_no_bg/)",
+      "Read(//Users/aoli/Desktop/Jolin_ai_vid/frames/cat_walk_frame_pick_no_bg/**)",
+      "Bash(ffmpeg -i /Users/aoli/Desktop/Jolin_ai_vid/walkingcat.mp4 /Users/aoli/Desktop/Jolin_ai_vid/frames/walkingcat/frame_%04d.png -hide_banner -loglevel error)",
+      "Bash(ffmpeg -i /Users/aoli/Desktop/Jolin_ai_vid/sleepingcat.mp4 /Users/aoli/Desktop/Jolin_ai_vid/frames/sleepingcat/frame_%04d.png -hide_banner -loglevel error)",
+      "Bash(ffmpeg -i /Users/aoli/Desktop/Jolin_ai_vid/buttom.mp4 /Users/aoli/Desktop/Jolin_ai_vid/frames/buttom/frame_%04d.png -hide_banner -loglevel error)",
+      "Bash(wait)",
+      "Bash(find /Users/aoli/Desktop/Jolin_ai_vid/frames -mindepth 2 -maxdepth 2 -type d)",
+      "Read(//Users/aoli/Desktop/Jolin_ai_vid/frames/**)",
+      "Bash(mkdir -p /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/walk /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/sleep /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/buttom)",
+      "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/walkingcat/Jolin_walk/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/walk/)",
+      "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/sleepingcat/Jolin_sleep/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/sleep/)",
+      "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/buttom/jolin_buttom/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/buttom/)",
+      "Bash(node --check /Users/aoli/Desktop/Jolin_on_Desk/renderer.js)"
     ]
   }
 }

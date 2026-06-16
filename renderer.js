@@ -3,6 +3,46 @@ const canvas = document.getElementById('cat');
 const ctx = canvas.getContext('2d');
 const bubble = document.getElementById('bubble');
 
+// ── Sprite loader helper ──────────────────────────────────────────────────────
+function loadSprites(folder, names) {
+  let loaded = 0;
+  const imgs = names.map(name => {
+    const img = new Image();
+    img.src = `assets/sprites/${folder}/${name}`;
+    img.onload = () => loaded++;
+    return img;
+  });
+  return { imgs, ready: () => loaded === imgs.length };
+}
+
+// ── Walk sprites ──────────────────────────────────────────────────────────────
+const walk = loadSprites('walk', [
+  'frame_0165.png', 'frame_0168.png', 'frame_0171.png', 'frame_0174.png',
+  'frame_0177.png', 'frame_0180.png', 'frame_0183.png', 'frame_0186.png', 'frame_0189.png'
+]);
+
+// ── Sleep sprites ─────────────────────────────────────────────────────────────
+const sleep = loadSprites('sleep', [
+  'frame_0004.png', 'frame_0013.png', 'frame_0022.png', 'frame_0031.png',
+  'frame_0040.png', 'frame_0049.png', 'frame_0058.png', 'frame_0067.png',
+  'frame_0076.png', 'frame_0085.png', 'frame_0094.png'
+]);
+
+// ── Buttom sprites ────────────────────────────────────────────────────────────
+const buttom = loadSprites('buttom', [
+  'frame_0014.png', 'frame_0023.png', 'frame_0032.png', 'frame_0041.png',
+  'frame_0050.png', 'frame_0059.png', 'frame_0068.png', 'frame_0077.png',
+  'frame_0095.png', 'frame_0098.png', 'frame_0102.png', 'frame_0105.png',
+  'frame_0109.png', 'frame_0121.png', 'frame_0125.png', 'frame_0129.png',
+  'frame_0133.png', 'frame_0159.png', 'frame_0168.png', 'frame_0195.png',
+  'frame_0206.png', 'frame_0214.png', 'frame_0220.png', 'frame_0231.png'
+]);
+
+const SIZE_WALK   = 200;  // walk sprite height in px
+const SIZE_SLEEP  = 100;  // sleep sprite height in px
+const SIZE_BUTTOM = 150;  // buttom sprite height in px
+const WALK_Y_OFFSET = 50; // push walk sprite down (increase to move lower)
+
 // ── Canvas fills the work area (excludes Dock/taskbar) ───────────────────────
 let SW = window.innerWidth;
 let SH = window.innerHeight;
@@ -25,54 +65,40 @@ const C = {
 };
 
 // ── State machine ─────────────────────────────────────────────────────────────
-const STATE = { IDLE: 'idle', WALK: 'walk', SIT: 'sit', PLAY: 'play', SLEEP: 'sleep' };
+const STATE = { WALK: 'walk', SLEEP: 'sleep', PLAY: 'play' };
 
-let state     = STATE.SIT;
-let frame     = 0;       // animation tick (incremented each rAF)
-let direction = 1;       // 1 = right, -1 = left
-let posX      = SW / 2;  // horizontal position within canvas (cat center)
-let posY      = SH - 50; // vertical baseline — near bottom of screen
+let state     = STATE.WALK;
+let frame     = 0;
+let direction = 1;
+let posX      = SW / 2;
+let posY      = SH - 50;
 let bubbleTimer = 0;
 
-// Walk target
 let walkTarget = posX;
-let walkSpeed  = 1.8;
-
-// ── Messages shown on click ───────────────────────────────────────────────────
-const meows = ['Meow~', 'Purrrr...', '*headbutt*', 'Feed me!', 'Pet me!', '(^•ω•^)', 'Mrrrow?'];
-let meowIdx = 0;
-
-// ── Idle/walk schedule ────────────────────────────────────────────────────────
+const walkSpeed  = 0.25;
 let stateTimer = 0;
-const STATE_DURATIONS = {
-  [STATE.IDLE]:  () => 120 + Math.random() * 180,
-  [STATE.WALK]:  () => 180 + Math.random() * 120,
-  [STATE.SIT]:   () => 200 + Math.random() * 200,
-  [STATE.SLEEP]: () => 300 + Math.random() * 300
-};
 
-function scheduleNextState() {
-  stateTimer = STATE_DURATIONS[state] ? STATE_DURATIONS[state]() : 180;
+function startWalk() {
+  state      = STATE.WALK;
+  if (posX < SW / 2) {
+    walkTarget = SW * 0.6 + Math.random() * SW * 0.35;
+  } else {
+    walkTarget = SW * 0.05 + Math.random() * SW * 0.35;
+  }
+  direction  = walkTarget > posX ? 1 : -1;
+  stateTimer = 600 + Math.random() * 400; // max walk time before sleeping anyway
+}
+
+function startSleep() {
+  state      = STATE.SLEEP;
+  stateTimer = 300 + Math.random() * 300;
 }
 
 function pickNewState() {
-  if (state === STATE.PLAY) return; // play ends itself
-  const roll = Math.random();
-  if (roll < 0.35) {
-    state = STATE.WALK;
-    walkTarget = 60 + Math.random() * (SW - 120);  // anywhere across the screen
-    direction  = walkTarget > posX ? 1 : -1;
-  } else if (roll < 0.60) {
-    state = STATE.SIT;
-  } else if (roll < 0.85) {
-    state = STATE.IDLE;
-  } else {
-    state = STATE.SLEEP;
-  }
-  scheduleNextState();
+  Math.random() < 0.5 ? startWalk() : startSleep();
 }
 
-scheduleNextState();
+startWalk();
 
 // ── Drawing helpers ───────────────────────────────────────────────────────────
 
@@ -255,41 +281,35 @@ function drawCat(cx, baseline, { bobY = 0, blinkT = 0, tailPhase = 0, sitting = 
   ctx.restore();
 }
 
-// ── Blink scheduler ───────────────────────────────────────────────────────────
-let blinkT    = 0;
-let blinkDir  = 0;   // 0=idle, 1=closing, -1=opening
-let blinkNext = 180 + Math.random() * 200;
-
-function updateBlink() {
-  blinkNext--;
-  if (blinkNext <= 0 && blinkDir === 0) {
-    blinkDir  = 1;
-    blinkNext = 180 + Math.random() * 200;
-  }
-  if (blinkDir === 1) {
-    blinkT += 0.25;
-    if (blinkT >= 1) { blinkT = 1; blinkDir = -1; }
-  } else if (blinkDir === -1) {
-    blinkT -= 0.25;
-    if (blinkT <= 0) { blinkT = 0; blinkDir = 0; }
-  }
-}
-
 // ── Play state ────────────────────────────────────────────────────────────────
 let playFrames = 0;
-const PLAY_DURATION = 90;
 
 function triggerPlay() {
-  state       = STATE.PLAY;
-  playFrames  = 0;
-  showBubble(meows[meowIdx % meows.length]);
-  meowIdx++;
+  if (state === STATE.PLAY) return;
+  state      = STATE.PLAY;
+  playFrames = 0;
 }
 
 function showBubble(text) {
   bubble.textContent = text;
   bubble.classList.add('show');
   bubbleTimer = 120;
+}
+
+// ── Sprite drawing ────────────────────────────────────────────────────────────
+function drawSprite(spriteSet, tickDivisor, cx, baseline, flipX, frameOverride, size) {
+  if (!spriteSet.ready()) return false;
+  const idx = frameOverride !== undefined ? frameOverride : Math.floor(frame / tickDivisor) % spriteSet.imgs.length;
+  const img = spriteSet.imgs[Math.min(idx, spriteSet.imgs.length - 1)];
+  if (!img.complete || img.naturalWidth === 0) return false;
+  const h = size || 150;
+  const w = h * (img.naturalWidth / img.naturalHeight);
+  ctx.save();
+  ctx.translate(cx, baseline);
+  if (flipX) ctx.scale(-1, 1);
+  ctx.drawImage(img, -w / 2, -h, w, h);
+  ctx.restore();
+  return true;
 }
 
 // ── Main loop ─────────────────────────────────────────────────────────────────
@@ -303,66 +323,28 @@ function tick() {
     if (bubbleTimer === 0) bubble.classList.remove('show');
   }
 
-  updateBlink();
   stateTimer--;
   if (stateTimer <= 0 && state !== STATE.PLAY) pickNewState();
 
-  let bobY     = 0;
-  let tailPh   = frame * 0.04;
-  let legPh    = 0;
-  let sitting  = false;
-  let sleeping = false;
-
-  // Per-state logic
   switch (state) {
-    case STATE.IDLE:
-      bobY = Math.sin(frame * 0.05) * 1.5;
-      break;
-
     case STATE.WALK:
       posX += direction * walkSpeed;
-      legPh = frame * 0.25;
-      bobY  = Math.abs(Math.sin(frame * 0.25)) * -2;
-      tailPh = frame * 0.08;
-      if (Math.abs(posX - walkTarget) < 2) {
-        posX  = walkTarget;
-        state = STATE.IDLE;
-        scheduleNextState();
-      }
-      // Bounce off screen edges
-      if (posX < 60)       { posX = 60;       direction =  1; walkTarget = 60 + Math.random() * (SW - 120); }
-      if (posX > SW - 60)  { posX = SW - 60;  direction = -1; walkTarget = 60 + Math.random() * (SW - 120); }
-      break;
-
-    case STATE.SIT:
-      sitting = true;
-      bobY    = Math.sin(frame * 0.03) * 1;
-      tailPh  = frame * 0.03;
+      if (Math.abs(posX - walkTarget) < 2) { posX = walkTarget; startSleep(); }
+      if (posX < 20)       { posX = 20;       direction =  1; walkTarget = SW - 20; }
+      if (posX > SW - 20)  { posX = SW - 20;  direction = -1; walkTarget = 20; }
+      drawSprite(walk, 7, posX, posY + WALK_Y_OFFSET, direction === -1, undefined, SIZE_WALK);
       break;
 
     case STATE.SLEEP:
-      sleeping = true;
+      drawSprite(sleep, 12, posX, posY, false, undefined, SIZE_SLEEP);
       break;
 
-    case STATE.PLAY: {
+    case STATE.PLAY:
       playFrames++;
-      // Quick bouncy jump animation
-      const t  = playFrames / PLAY_DURATION;
-      const pt = Math.sin(t * Math.PI);
-      bobY  = -pt * 18;
-      legPh = frame * 0.4;
-      tailPh = frame * 0.15;
-      // Spin direction halfway
-      if (playFrames === Math.floor(PLAY_DURATION / 2)) direction *= -1;
-      if (playFrames >= PLAY_DURATION) {
-        state = STATE.SIT;
-        scheduleNextState();
-      }
+      drawSprite(buttom, 15, posX, posY, false, Math.floor(playFrames / 5), SIZE_BUTTOM);
+      if (playFrames >= buttom.imgs.length * 5) startWalk();
       break;
-    }
   }
-
-  drawCat(posX, posY, { bobY, blinkT, tailPhase: tailPh, sitting, sleeping, legPhase: legPh });
 
   // Keep speech bubble above the cat's head
   bubble.style.left = posX + 'px';
