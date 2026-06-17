@@ -21,7 +21,8 @@
       "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/walkingcat/Jolin_walk/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/walk/)",
       "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/sleepingcat/Jolin_sleep/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/sleep/)",
       "Bash(cp /Users/aoli/Desktop/Jolin_ai_vid/frames/buttom/jolin_buttom/*.png /Users/aoli/Desktop/Jolin_on_Desk/assets/sprites/buttom/)",
-      "Bash(node --check /Users/aoli/Desktop/Jolin_on_Desk/renderer.js)"
+      "Bash(node --check /Users/aoli/Desktop/Jolin_on_Desk/renderer.js)",
+      "Bash(python3 -)"
     ]
   }
 }

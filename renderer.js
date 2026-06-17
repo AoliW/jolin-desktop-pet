@@ -33,8 +33,8 @@ const buttom = loadSprites('buttom', [
   'frame_0014.png', 'frame_0023.png', 'frame_0032.png', 'frame_0041.png',
   'frame_0050.png', 'frame_0059.png', 'frame_0068.png', 'frame_0077.png',
   'frame_0095.png', 'frame_0098.png', 'frame_0102.png', 'frame_0105.png',
-  'frame_0109.png', 'frame_0121.png', 'frame_0125.png', 'frame_0129.png',
-  'frame_0133.png', 'frame_0159.png', 'frame_0168.png', 'frame_0195.png',
+  'frame_0109.png', 'frame_0117.png', 'frame_0121.png', 'frame_0125.png', 'frame_0129.png',
+  'frame_0133.png', 'frame_0159.png', 'frame_0168.png', 'frame_0183.png', 'frame_0195.png',
   'frame_0206.png', 'frame_0214.png', 'frame_0220.png', 'frame_0231.png'
 ]);
 
@@ -78,6 +78,10 @@ let walkTarget = posX;
 const walkSpeed  = 0.25;
 let stateTimer = 0;
 
+let isDragging = false;
+let dragOffX = 0, dragOffY = 0;
+let didDrag  = false;
+
 function startWalk() {
   state      = STATE.WALK;
   if (posX < SW / 2) {
@@ -86,7 +90,6 @@ function startWalk() {
     walkTarget = SW * 0.05 + Math.random() * SW * 0.35;
   }
   direction  = walkTarget > posX ? 1 : -1;
-  stateTimer = 600 + Math.random() * 400; // max walk time before sleeping anyway
 }
 
 function startSleep() {
@@ -324,14 +327,16 @@ function tick() {
   }
 
   stateTimer--;
-  if (stateTimer <= 0 && state !== STATE.PLAY) pickNewState();
+  if (stateTimer <= 0 && state === STATE.SLEEP) pickNewState();
 
   switch (state) {
     case STATE.WALK:
-      posX += direction * walkSpeed;
-      if (Math.abs(posX - walkTarget) < 2) { posX = walkTarget; startSleep(); }
-      if (posX < 20)       { posX = 20;       direction =  1; walkTarget = SW - 20; }
-      if (posX > SW - 20)  { posX = SW - 20;  direction = -1; walkTarget = 20; }
+      if (!isDragging) {
+        posX += direction * walkSpeed;
+        if (Math.abs(posX - walkTarget) < 2) { posX = walkTarget; startSleep(); }
+        if (posX < 20)       { posX = 20;       direction =  1; walkTarget = SW - 20; }
+        if (posX > SW - 20)  { posX = SW - 20;  direction = -1; walkTarget = 20; }
+      }
       drawSprite(walk, 7, posX, posY + WALK_Y_OFFSET, direction === -1, undefined, SIZE_WALK);
       break;
 
@@ -341,14 +346,15 @@ function tick() {
 
     case STATE.PLAY:
       playFrames++;
-      drawSprite(buttom, 15, posX, posY, false, Math.floor(playFrames / 5), SIZE_BUTTOM);
+      if (playFrames === 9 * 5) showBubble('Love you~ 🩷');
+      drawSprite(buttom, 15, posX, posY, false, Math.floor(playFrames / 6), SIZE_BUTTOM);
       if (playFrames >= buttom.imgs.length * 5) startWalk();
       break;
   }
 
   // Keep speech bubble above the cat's head
-  bubble.style.left = posX + 'px';
-  bubble.style.top  = (posY - 80) + 'px';
+  bubble.style.left = (posX + 20) + 'px';
+  bubble.style.top  = (posY - 180) + 'px';
 
   requestAnimationFrame(tick);
 }
@@ -358,10 +364,17 @@ const CAT_HOVER_RADIUS = 55;
 let isIgnoring = true;
 
 window.addEventListener('mousemove', (e) => {
+  if (isDragging) {
+    const newX = e.clientX + dragOffX;
+    const newY = e.clientY + dragOffY;
+    if (Math.abs(newX - posX) > 2 || Math.abs(newY - posY) > 2) didDrag = true;
+    posX = Math.max(20, Math.min(SW - 20, newX));
+    posY = Math.max(80, Math.min(SH - 10, newY));
+    return;
+  }
   const dx = e.clientX - posX;
-  const dy = e.clientY - (posY - 30); // bias toward the cat's center, not feet
+  const dy = e.clientY - (posY - 30);
   const over = Math.sqrt(dx * dx + dy * dy) < CAT_HOVER_RADIUS;
-  // Only send IPC when state changes, not on every mousemove
   if (over && isIgnoring) {
     isIgnoring = false;
     ipcRenderer.send('set-ignore-mouse', false);
@@ -372,8 +385,26 @@ window.addEventListener('mousemove', (e) => {
 });
 
 // ── Input ─────────────────────────────────────────────────────────────────────
-canvas.addEventListener('click', () => {
-  triggerPlay();
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  const dx = e.clientX - posX;
+  const dy = e.clientY - (posY - 60);
+  if (Math.sqrt(dx * dx + dy * dy) > CAT_HOVER_RADIUS) return;
+  isDragging = true;
+  didDrag    = false;
+  dragOffX   = posX - e.clientX;
+  dragOffY   = posY - e.clientY;
+  ipcRenderer.send('set-ignore-mouse', false);
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (!isDragging || e.button !== 0) return;
+  isDragging = false;
+  if (didDrag) {
+    startWalk();
+  } else {
+    triggerPlay();
+  }
 });
 
 canvas.addEventListener('contextmenu', (e) => {
